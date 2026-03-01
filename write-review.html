@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Write a Review - Yumlog</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --red:    #E63946;
+      --orange: #F4622A;
+      --yellow: #F9A825;
+      --cream:  #FFF8F0;
+      --dark:   #2C2C2C;
+      --mid:    #666;
+      --light:  #f2f2f2;
+      --white:  #ffffff;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.10);
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--cream); color: var(--dark); }
+    a { text-decoration: none; color: inherit; }
+    nav { background: linear-gradient(135deg, var(--red), var(--orange)); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .nav-logo span { color: white; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: white; font-weight: 500; font-size: 0.95rem; opacity: 0.9; transition: opacity 0.2s; }
+    .nav-links a:hover { opacity: 1; }
+    .nav-links .btn-login { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.4); }
+    .nav-links .btn-signup { background: white; color: var(--orange) !important; padding: 0.4rem 1rem; border-radius: 20px; font-weight: 700 !important; opacity: 1 !important; }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+    .hamburger span { width: 24px; height: 2px; background: white; border-radius: 2px; }
+    .hero { background: linear-gradient(135deg, var(--red), var(--orange), var(--yellow)); padding: 3rem 1.5rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 60px; background: var(--cream); clip-path: ellipse(55% 100% at 50% 100%); }
+    .hero-content { max-width: 700px; margin: 0 auto; position: relative; z-index: 2; }
+    .hero h1 { color: white; font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 900; margin-bottom: 0.5rem; text-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .hero p { color: rgba(255,255,255,0.95); font-size: clamp(1rem, 2.5vw, 1.15rem); margin-bottom: 1rem; }
+    .restaurant-pill { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.25); padding: 0.5rem 1.25rem; border-radius: 50px; color: white; font-weight: 700; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.35); }
+    .container { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    .review-card { background: white; border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+    .card-header { margin-bottom: 1.75rem; }
+    .card-header h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.35rem; }
+    .card-header p { color: var(--mid); font-size: 0.95rem; }
+    .rating-section { margin-bottom: 1.75rem; }
+    .section-label { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; display: block; }
+    .star-rating { display: flex; gap: 0.5rem; }
+    .star-btn { background: none; border: none; font-size: 2.5rem; cursor: pointer; transition: transform 0.2s; color: #ddd; line-height: 1; }
+    .star-btn:hover { transform: scale(1.15); }
+    .star-btn.active { color: var(--yellow); }
+    .rating-label-text { font-size: 0.9rem; color: var(--mid); margin-top: 0.5rem; min-height: 1.4em; }
+    .form-group { margin-bottom: 1.75rem; }
+    .form-group textarea { width: 100%; border: 2px solid var(--light); border-radius: var(--radius); padding: 1rem; font-size: 0.95rem; font-family: inherit; resize: vertical; transition: border 0.2s; line-height: 1.6; }
+    .form-group textarea:focus { outline: none; border-color: var(--orange); }
+    .char-count { font-size: 0.8rem; color: var(--mid); text-align: right; margin-top: 0.35rem; }
+    .photo-upload { margin-bottom: 1.75rem; }
+    .upload-area { border: 2px dashed var(--light); border-radius: var(--radius); padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s; }
+    .upload-area:hover { border-color: var(--orange); background: #fff8f0; }
+    .upload-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .upload-text { font-weight: 600; color: var(--dark); margin-bottom: 0.25rem; }
+    .upload-hint { font-size: 0.85rem; color: var(--mid); }
+    .photo-previews { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    .photo-preview { width: 100px; height: 100px; border-radius: var(--radius); background: linear-gradient(135deg, var(--light), #e8e8e8); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; position: relative; }
+    .photo-remove { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: var(--red); color: white; border: 2px solid white; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .button-group { display: flex; gap: 1rem; margin-top: 2rem; }
+    .btn-primary { background: linear-gradient(135deg, var(--red), var(--orange)); color: white; border: none; padding: 0.95rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: opacity 0.2s; flex: 1; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: white; color: var(--mid); border: 2px solid var(--light); padding: 0.95rem 2rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: var(--orange); color: var(--orange); }
+    .blog-upgrade { background: linear-gradient(135deg, #fff8f0, #ffe5e5); border: 2px solid var(--orange); border-radius: var(--radius); padding: 2rem; text-align: center; margin-bottom: 1.5rem; cursor: pointer; transition: all 0.2s; }
+    .blog-upgrade:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+    .upgrade-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .blog-upgrade h3 { font-size: 1.4rem; font-weight: 800; color: var(--dark); margin-bottom: 0.5rem; }
+    .blog-upgrade p { color: var(--mid); margin-bottom: 1.25rem; line-height: 1.6; }
+    .benefits { display: flex; gap: 1.5rem; justify-content: center; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .benefit { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; font-weight: 600; }
+    .btn-upgrade { background: var(--orange); color: white; border: none; padding: 0.85rem 2.5rem; border-radius: 50px; font-weight: 700; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+    .btn-upgrade:hover { background: var(--red); transform: scale(1.03); }
+    .blog-editor { display: none; }
+    .blog-editor.active { display: block; }
+    .blog-form { background: white; border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); }
+    .blog-form input[type="text"] { width: 100%; border: 2px solid var(--light); border-radius: var(--radius); padding: 0.85rem 1rem; font-size: 1.1rem; font-weight: 700; font-family: inherit; transition: border 0.2s; }
+    .blog-form input[type="text"]:focus { outline: none; border-color: var(--orange); }
+    .blog-form textarea { min-height: 300px; }
+    .formatting-toolbar { display: flex; gap: 0.5rem; padding: 0.75rem; background: var(--light); border-radius: var(--radius); margin-bottom: 1rem; flex-wrap: wrap; }
+    .format-btn { background: white; border: 1px solid #ddd; padding: 0.5rem 0.85rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+    .format-btn:hover { background: var(--orange); color: white; border-color: var(--orange); }
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      .hero { padding: 2rem 1.25rem; }
+      .review-card { padding: 1.5rem; }
+      .star-btn { font-size: 2rem; }
+      .button-group { flex-direction: column; }
+      .benefits { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body data-page="write-review">
+<nav>
+  <div class="nav-logo" onclick="location.href='index.html'">
+    <svg width="38" height="38" viewBox="0 0 60 60" style="background:white;border-radius:50%;padding:3px;">
+      <ellipse cx="30" cy="38" rx="22" ry="10" fill="#F4622A"/>
+      <path d="M 8 35 Q 8 55 30 55 Q 52 55 52 35 Z" fill="#F4622A"/>
+      <path d="M 10 35 Q 10 53 30 53 Q 50 53 50 35 Z" fill="#FF6B35"/>
+      <ellipse cx="30" cy="35" rx="22" ry="6" fill="#E63946"/>
+      <ellipse cx="30" cy="35" rx="20" ry="5" fill="#FF8C5A"/>
+      <circle cx="24" cy="33" r="2.5" fill="white"/><circle cx="36" cy="33" r="2.5" fill="white"/>
+      <circle cx="24.5" cy="32.5" r="1.2" fill="#E63946"/><circle cx="36.5" cy="32.5" r="1.2" fill="#E63946"/>
+      <path d="M 22 38 Q 30 43 38 38" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <line x1="6" y1="16" x2="13" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="2" y1="16" x2="9" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="54" y1="16" x2="47" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="58" y1="16" x2="51" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <span>Yumlog</span>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <a href="search.html">Explore</a>
+    <a href="#">Top Reviewers</a>
+    <a href="#">Blog</a>
+    <a href="profile.html">My Profile</a>
+  </div>
+  <div class="hamburger" onclick="document.getElementById('mobileMenu').classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu"></div>
+<div class="hero">
+  <div class="hero-content">
+    <h1>🎉 Spill the Tea (or Tiramisu)!</h1>
+    <p>Help fellow foodies discover great meals — your honest opinion matters</p>
+    <div class="restaurant-pill"><span style="font-size:1.5rem;">🍝</span><span>Loading...</span></div>
+  </div>
+</div>
+<div class="container">
+  <div class="review-card">
+    <div class="card-header">
+      <h2>Quick Review</h2>
+      <p>Share your experience in just a few minutes</p>
+    </div>
+    <div class="rating-section">
+      <label class="section-label">How was your experience?</label>
+      <div class="star-rating" id="starRating">
+        <button class="star-btn" onclick="setRating(1)">★</button>
+        <button class="star-btn" onclick="setRating(2)">★</button>
+        <button class="star-btn" onclick="setRating(3)">★</button>
+        <button class="star-btn" onclick="setRating(4)">★</button>
+        <button class="star-btn" onclick="setRating(5)">★</button>
+      </div>
+      <div class="rating-label-text" id="ratingLabel">Tap a star to rate</div>
+    </div>
+    <div class="form-group">
+      <label class="section-label">Tell us about your visit</label>
+      <textarea id="reviewText" placeholder="What did you order? How was the food, service, and atmosphere? Any standout dishes or things to know?" rows="6" maxlength="500" oninput="updateCharCount()"></textarea>
+      <div class="char-count"><span id="charCount">0</span>/500 characters</div>
+    </div>
+    <div class="photo-upload">
+      <label class="section-label">Add photos (optional)</label>
+      <div class="upload-area" onclick="addPhoto()">
+        <div class="upload-icon">📸</div>
+        <div class="upload-text">Click to add a photo</div>
+        <div class="upload-hint">Up to 5 photos • (Simulated for demo)</div>
+      </div>
+      <div class="photo-previews" id="photoPreviews"></div>
+    </div>
+    <div class="button-group">
+      <button class="btn-secondary" id="cancelBtn">Cancel</button>
+      <button class="btn-primary" onclick="submitQuickReview()">Post Review</button>
+    </div>
+  </div>
+  <div class="blog-upgrade" id="blogUpgrade" onclick="expandBlogEditor()">
+    <div class="upgrade-icon">✨</div>
+    <h3>Want to Write More?</h3>
+    <p>Turn this into a featured blog post and share your full story</p>
+    <div class="benefits">
+      <div class="benefit"><span>🏆</span><span>Earn 3× points</span></div>
+      <div class="benefit"><span>📌</span><span>Get featured</span></div>
+      <div class="benefit"><span>👥</span><span>Build followers</span></div>
+    </div>
+    <button class="btn-upgrade" onclick="event.stopPropagation();expandBlogEditor();">✍️ Upgrade to Blog Post</button>
+  </div>
+  <div class="blog-editor" id="blogEditor">
+    <div class="blog-form">
+      <div class="card-header">
+        <h2>✍️ Blog Post Editor</h2>
+        <p>Share your full experience with the community</p>
+      </div>
+      <div class="form-group">
+        <label class="section-label">Give your post a catchy title</label>
+        <input type="text" placeholder="e.g. 'A Hidden Gem in Sydney CBD'" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label class="section-label">Tell your story</label>
+        <div class="formatting-toolbar">
+          <button class="format-btn"><strong>B</strong></button>
+          <button class="format-btn"><em>I</em></button>
+          <button class="format-btn">H1</button>
+          <button class="format-btn">• List</button>
+          <button class="format-btn">❝ Quote</button>
+        </div>
+        <textarea placeholder="Share the full story of your visit..." rows="15"></textarea>
+        <p style="font-size:0.85rem;color:var(--mid);margin-top:0.5rem;">💡 <strong>Pro tip:</strong> Great blog posts are 300–800 words with specific details.</p>
+      </div>
+      <div class="button-group">
+        <button class="btn-secondary" onclick="collapseBlogEditor()">← Back to Quick Review</button>
+        <button class="btn-primary" onclick="submitBlogPost()">🚀 Publish Blog Post</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  let selectedRating = 0;
+  let uploadedPhotos = [];
+  const ratingLabels = ['', 'Poor — not recommended', 'Below average', 'Decent — worth trying', 'Good — would recommend', 'Excellent — must visit!'];
+
+  function setRating(stars) {
+    selectedRating = stars;
+    document.querySelectorAll('.star-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', i < stars);
+    });
+    document.getElementById('ratingLabel').textContent = ratingLabels[stars] || '';
+  }
+
+  function updateCharCount() {
+    const t = document.getElementById('reviewText');
+    document.getElementById('charCount').textContent = t.value.length;
+  }
+
+  function addPhoto() {
+    if (uploadedPhotos.length >= 5) { alert('Maximum 5 photos. Upgrade to a blog post for up to 10!'); return; }
+    const emojis = ['🍝', '🍕', '🥗', '🍰', '🍷', '☕', '🍜', '🥘', '🍣', '🍔'];
+    uploadedPhotos.push(emojis[Math.floor(Math.random() * emojis.length)]);
+    renderPhotos();
+  }
+
+  function renderPhotos() {
+    document.getElementById('photoPreviews').innerHTML = uploadedPhotos.map((e, i) =>
+      `<div class="photo-preview">${e}<div class="photo-remove" onclick="removePhoto(${i})">×</div></div>`
+    ).join('');
+  }
+
+  function removePhoto(i) { uploadedPhotos.splice(i, 1); renderPhotos(); }
+
+  function expandBlogEditor() {
+    document.getElementById('blogUpgrade').style.display = 'none';
+    document.getElementById('blogEditor').classList.add('active');
+    window.scrollTo({ top: document.getElementById('blogEditor').offsetTop - 80, behavior: 'smooth' });
+  }
+
+  function collapseBlogEditor() {
+    document.getElementById('blogEditor').classList.remove('active');
+    document.getElementById('blogUpgrade').style.display = 'block';
+  }
+
+  // Cancel button — set after page loads so we know the restaurantId
+  document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(location.search);
+    const rid = params.get('restaurantId') || 'r1';
+    const cancelBtn = document.getElementById('cancelBtn');
+    if (cancelBtn) cancelBtn.onclick = () => location.href = 'restaurant.html?id=' + rid;
+  });
+</script>
+</body>
+</html>

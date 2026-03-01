@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant - Yumlog</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --red:    #E63946;
+      --orange: #F4622A;
+      --yellow: #F9A825;
+      --cream:  #FFF8F0;
+      --dark:   #2C2C2C;
+      --mid:    #666;
+      --light:  #f2f2f2;
+      --white:  #ffffff;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.10);
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--cream); color: var(--dark); }
+    a { text-decoration: none; color: inherit; }
+    nav { background: linear-gradient(135deg, var(--red), var(--orange)); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+    .nav-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .nav-logo span { color: white; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a { color: white; font-weight: 500; font-size: 0.95rem; opacity: 0.9; transition: opacity 0.2s; }
+    .nav-links a:hover { opacity: 1; }
+    .nav-links .btn-login { background: rgba(255,255,255,0.2); padding: 0.4rem 1rem; border-radius: 20px; border: 1px solid rgba(255,255,255,0.4); }
+    .nav-links .btn-signup { background: white; color: var(--orange) !important; padding: 0.4rem 1rem; border-radius: 20px; font-weight: 700 !important; opacity: 1 !important; }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+    .hamburger span { width: 24px; height: 2px; background: white; border-radius: 2px; }
+    .mobile-menu { display: none; position: absolute; top: 64px; left: 0; right: 0; background: linear-gradient(135deg, var(--red), var(--orange)); padding: 1rem 1.5rem; flex-direction: column; gap: 1rem; z-index: 99; }
+    .mobile-menu a { color: white; font-weight: 500; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.15); }
+    .mobile-menu.open { display: flex; }
+    .hero-gallery { height: 360px; background: linear-gradient(135deg,#ffe0b2,#ffcc80); display: flex; align-items: center; justify-content: center; font-size: 8rem; position: relative; overflow: hidden; }
+    .gallery-overlay { position: absolute; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.7); color: white; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
+    .restaurant-header { background: white; padding: 2rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1.5rem; }
+    .header-info { flex: 1; }
+    .header-info h1 { font-size: 2rem; font-weight: 900; margin-bottom: 0.5rem; }
+    .header-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; color: var(--mid); font-size: 0.95rem; }
+    .header-actions { display: flex; gap: 0.75rem; flex-shrink: 0; }
+    .btn-primary { background: linear-gradient(135deg, var(--red), var(--orange)); color: white; border: none; padding: 0.85rem 1.75rem; border-radius: 50px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; font-size: 0.95rem; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-secondary { background: white; color: var(--orange); border: 2px solid var(--orange); padding: 0.85rem 1.75rem; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; }
+    .btn-secondary:hover { background: var(--orange); color: white; }
+    .rating-bar { display: flex; align-items: center; gap: 1.5rem; padding: 1.25rem 0; border-top: 1px solid var(--light); border-bottom: 1px solid var(--light); }
+    .rating-main { display: flex; align-items: center; gap: 0.75rem; }
+    .rating-score { font-size: 2.5rem; font-weight: 900; color: var(--dark); }
+    .rating-details { display: flex; flex-direction: column; }
+    .stars { color: var(--yellow); font-size: 1.1rem; }
+    .review-count { font-size: 0.85rem; color: var(--mid); margin-top: 0.15rem; }
+    .rating-breakdown { display: flex; gap: 2.5rem; flex: 1; }
+    .rating-type { display: flex; flex-direction: column; gap: 0.5rem; min-width: 140px; }
+    .rating-header { display: flex; align-items: center; gap: 0.5rem; }
+    .rating-label { font-size: 0.85rem; font-weight: 600; color: var(--mid); }
+    .rating-percent { font-size: 1.3rem; font-weight: 800; color: var(--dark); }
+    .progress-bar-container { position: relative; width: 100%; height: 12px; background: var(--light); border-radius: 20px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; border-radius: 20px; transition: width 0.6s ease; position: relative; }
+    .progress-bar-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); animation: shimmer 2s infinite; }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    .progress-helpful { background: linear-gradient(90deg, #4CAF50, #66BB6A); }
+    .progress-honest { background: linear-gradient(90deg, var(--orange), var(--red)); }
+    .main { padding: 2rem 0; display: grid; grid-template-columns: 1fr 320px; gap: 2rem; }
+    .info-card { background: white; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+    .info-card h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .info-grid { display: grid; gap: 1rem; }
+    .info-row { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .info-icon { font-size: 1.2rem; width: 28px; flex-shrink: 0; }
+    .info-content { flex: 1; }
+    .info-label { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.15rem; }
+    .info-value { color: var(--mid); font-size: 0.9rem; line-height: 1.5; }
+    .hours-list { display: flex; flex-direction: column; gap: 0.25rem; }
+    .hours-day { display: flex; justify-content: space-between; font-size: 0.85rem; }
+    .hours-day.today { font-weight: 700; color: var(--orange); }
+    .reviews-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .filter-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .filter-pill { background: var(--light); border: 2px solid transparent; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .filter-pill:hover { background: #e8e8e8; }
+    .filter-pill.active { background: #ffe5e5; border-color: var(--orange); color: var(--orange); }
+    .reviews-list { }
+    .review { border-bottom: 1px solid var(--light); padding: 1.5rem 0; }
+    .review:last-child { border-bottom: none; }
+    .review-header { display: flex; gap: 1rem; margin-bottom: 0.75rem; }
+    .review-avatar { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; color: white; flex-shrink: 0; }
+    .review-author { flex: 1; }
+    .author-name { font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .author-rank { font-size: 0.8rem; color: var(--mid); }
+    .review-date { font-size: 0.8rem; color: var(--mid); }
+    .review-rating { margin-bottom: 0.5rem; }
+    .review-text { color: var(--dark); line-height: 1.7; margin-bottom: 0.75rem; font-size: 0.95rem; }
+    .review-photos { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .review-photo { width: 80px; height: 80px; border-radius: 8px; background: var(--light); display: flex; align-items: center; justify-content: center; font-size: 2rem; cursor: pointer; transition: transform 0.2s; }
+    .review-photo:hover { transform: scale(1.05); }
+    .review-actions { display: flex; gap: 1rem; }
+    .vote-btn { display: flex; align-items: center; gap: 0.4rem; background: var(--light); border: none; border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .vote-btn:hover { background: #e0e0e0; }
+    .vote-btn.voted { background: #ffe5e5; color: var(--orange); }
+    .map-widget { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+    .map-placeholder { height: 200px; background: var(--light); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+    .map-details { padding: 1rem; }
+    .map-address { font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .map-link { color: var(--orange); font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .quick-info { background: white; border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }
+    .quick-info h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; }
+    .quick-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--light); }
+    .quick-item:last-child { border-bottom: none; }
+    .quick-icon { font-size: 1.2rem; }
+    .quick-text { flex: 1; font-size: 0.9rem; }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      .hero-gallery { height: 240px; font-size: 5rem; }
+      .header-top { flex-direction: column; }
+      .header-actions { width: 100%; }
+      .header-actions button { flex: 1; }
+      .rating-bar { flex-direction: column; align-items: flex-start; gap: 1rem; }
+      .rating-breakdown { flex-direction: column; gap: 0.75rem; }
+      .main { grid-template-columns: 1fr; gap: 1.5rem; }
+      .sidebar { order: -1; }
+    }
+  </style>
+</head>
+<body data-page="restaurant">
+<nav>
+  <div class="nav-logo" onclick="location.href='index.html'">
+    <svg width="38" height="38" viewBox="0 0 60 60" style="background:white;border-radius:50%;padding:3px;">
+      <ellipse cx="30" cy="38" rx="22" ry="10" fill="#F4622A"/>
+      <path d="M 8 35 Q 8 55 30 55 Q 52 55 52 35 Z" fill="#F4622A"/>
+      <path d="M 10 35 Q 10 53 30 53 Q 50 53 50 35 Z" fill="#FF6B35"/>
+      <ellipse cx="30" cy="35" rx="22" ry="6" fill="#E63946"/>
+      <ellipse cx="30" cy="35" rx="20" ry="5" fill="#FF8C5A"/>
+      <circle cx="24" cy="33" r="2.5" fill="white"/><circle cx="36" cy="33" r="2.5" fill="white"/>
+      <circle cx="24.5" cy="32.5" r="1.2" fill="#E63946"/><circle cx="36.5" cy="32.5" r="1.2" fill="#E63946"/>
+      <path d="M 22 38 Q 30 43 38 38" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <line x1="6" y1="16" x2="13" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="2" y1="16" x2="9" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="54" y1="16" x2="47" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="58" y1="16" x2="51" y2="40" stroke="#c0874a" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <span>Yumlog</span>
+  </div>
+  <div class="nav-links" id="navLinks">
+    <a href="search.html">Explore</a>
+    <a href="#">Top Reviewers</a>
+    <a href="#">Blog</a>
+    <a href="login.html" class="btn-login">Log in</a>
+    <a href="login.html" class="btn-signup">Sign up</a>
+  </div>
+  <div class="hamburger" onclick="document.getElementById('mobileMenu').classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu"></div>
+<div class="hero-gallery">
+  <span class="hero-gallery-emoji">🍝</span>
+  <div class="gallery-overlay">📸 View all photos</div>
+</div>
+<div class="restaurant-header">
+  <div class="container">
+    <div class="header-top">
+      <div class="header-info">
+        <h1>Loading...</h1>
+        <div class="header-meta"></div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary">📋 Save</button>
+        <button class="btn-primary" data-action="write">✍️ Write Review</button>
+      </div>
+    </div>
+    <div class="rating-bar">
+      <div class="rating-main">
+        <div class="rating-score">–</div>
+        <div class="rating-details">
+          <div class="stars">☆☆☆☆☆</div>
+          <div class="review-count">Loading reviews...</div>
+          <div style="font-size:0.75rem;color:var(--orange);margin-top:0.25rem;cursor:pointer;font-weight:600;" onclick="showWeightingInfo()">ⓘ Weighted by reviewer trust</div>
+        </div>
+      </div>
+      <div class="rating-breakdown">
+        <div class="rating-type">
+          <div class="rating-header"><span style="font-size:1.2rem;">👍</span><div class="rating-label">Helpful</div></div>
+          <div class="rating-percent helpful-pct">–%</div>
+          <div class="progress-bar-container"><div class="progress-bar-fill progress-helpful" style="width:0%"></div></div>
+          <div style="font-size:0.75rem;color:var(--mid);margin-top:0.15rem;" class="helpful-votes-count"></div>
+        </div>
+        <div class="rating-type">
+          <div class="rating-header"><span style="font-size:1.2rem;">🌶️</span><div class="rating-label">Honest</div></div>
+          <div class="rating-percent honest-pct">–%</div>
+          <div class="progress-bar-container"><div class="progress-bar-fill progress-honest" style="width:0%"></div></div>
+          <div style="font-size:0.75rem;color:var(--mid);margin-top:0.15rem;" class="honest-votes-count"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <div class="main">
+    <div class="content">
+      <div class="info-card">
+        <h2>📋 About</h2>
+        <p class="about-text" style="line-height:1.7;color:var(--mid);">Loading...</p>
+      </div>
+      <div class="info-card">
+        <h2>ℹ️ Details</h2>
+        <div class="info-grid">
+          <div class="info-row">
+            <div class="info-icon">⏰</div>
+            <div class="info-content">
+              <div class="info-label">Hours</div>
+              <div class="hours-list">Loading...</div>
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon">📞</div>
+            <div class="info-content"><div class="info-label">Phone</div><div class="info-value restaurant-phone">–</div></div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon">🌐</div>
+            <div class="info-content"><div class="info-label">Website</div><div class="info-value restaurant-website" style="color:var(--orange);cursor:pointer;">–</div></div>
+          </div>
+          <div class="info-row">
+            <div class="info-icon">✨</div>
+            <div class="info-content"><div class="info-label">Amenities</div><div class="info-value restaurant-amenities">–</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="reviews-header">
+          <h2 class="reviews-count-label">💬 Reviews</h2>
+          <select class="reviews-sort" onchange="rerenderReviews()">
+            <option>Most helpful</option>
+            <option>Most recent</option>
+            <option>Highest rated</option>
+            <option>Lowest rated</option>
+          </select>
+        </div>
+        <div class="filter-pills">
+          <button class="filter-pill active" data-filter="all" onclick="setReviewFilter(this)">All reviews</button>
+          <button class="filter-pill" data-filter="5star" onclick="setReviewFilter(this)">5 stars</button>
+          <button class="filter-pill" data-filter="4star" onclick="setReviewFilter(this)">4 stars</button>
+          <button class="filter-pill" data-filter="photos" onclick="setReviewFilter(this)">With photos</button>
+          <button class="filter-pill" data-filter="blog" onclick="setReviewFilter(this)">Blog posts</button>
+        </div>
+        <div class="reviews-list"></div>
+      </div>
+    </div>
+    <div class="sidebar">
+      <div class="map-widget">
+        <div class="map-placeholder">🗺️</div>
+        <div class="map-details">
+          <div class="map-address restaurant-address"><strong>Loading...</strong></div>
+          <div class="map-link">📍 Get directions</div>
+        </div>
+      </div>
+      <div class="quick-info">
+        <h3>Quick Info</h3>
+        <div class="quick-item"><div class="quick-icon">💳</div><div class="quick-text">Accepts card &amp; cash</div></div>
+        <div class="quick-item"><div class="quick-icon">🍷</div><div class="quick-text restaurant-bar">–</div></div>
+        <div class="quick-item"><div class="quick-icon">♿</div><div class="quick-text restaurant-access">–</div></div>
+        <div class="quick-item"><div class="quick-icon">🅿️</div><div class="quick-text restaurant-parking">–</div></div>
+        <div class="quick-item"><div class="quick-icon">📅</div><div class="quick-text restaurant-reservations">–</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+  function showWeightingInfo() {
+    const rows = RANKS.map(r => `${r.emoji} ${r.name} (${r.minPts >= 5000 ? '5000+' : r.minPts + '+'} pts) = ${r.weight}× weight`).join('\n');
+    alert('🎯 Trust-Weighted Ratings\n\nReviews from higher-ranked reviewers carry more weight:\n\n' + rows + '\n\nThis prevents fake reviews and rewards honest, experienced reviewers.');
+  }
+
+  function setReviewFilter(pill) {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    rerenderReviews();
+  }
+
+  function rerenderReviews() {
+    const params = new URLSearchParams(location.search);
+    renderReviews(params.get('id') || 'r1');
+  }
+
+  // Populate sidebar quick info after restaurant loads
+  document.addEventListener('DOMContentLoaded', () => {
+    // Extra detail rendering after app.js initRestaurant runs
+    setTimeout(() => {
+      const params = new URLSearchParams(location.search);
+      const r = DB.getRestaurant(params.get('id') || 'r1');
+      if (!r) return;
+
+      const addrEl = document.querySelector('.restaurant-address');
+      if (addrEl) addrEl.innerHTML = `<strong>${r.address}</strong><br>${r.suburb} NSW`;
+
+      const phoneEl = document.querySelector('.restaurant-phone');
+      if (phoneEl) phoneEl.textContent = r.phone;
+
+      const webEl = document.querySelector('.restaurant-website');
+      if (webEl) webEl.textContent = r.website;
+
+      const amenEl = document.querySelector('.restaurant-amenities');
+      if (amenEl) amenEl.textContent = r.amenities.join(' • ');
+
+      const barEl = document.querySelector('.restaurant-bar');
+      if (barEl) barEl.textContent = r.amenities.includes('Wine bar') ? 'Full bar available' : 'No bar';
+
+      const accEl = document.querySelector('.restaurant-access');
+      if (accEl) accEl.textContent = r.wheelchairAccessible ? 'Wheelchair accessible' : 'Not wheelchair accessible';
+
+      const parkEl = document.querySelector('.restaurant-parking');
+      if (parkEl) parkEl.textContent = r.parking ? 'Parking available' : 'Street parking nearby';
+
+      const resEl = document.querySelector('.restaurant-reservations');
+      if (resEl) resEl.textContent = r.amenities.some(a => a.toLowerCase().includes('reserv')) ? 'Reservations recommended' : 'Walk-ins welcome';
+    }, 50);
+  });
+</script>
+</body>
+</html>
