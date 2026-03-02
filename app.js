@@ -222,6 +222,22 @@ function timeAgo(dateStr) {
   return `${months} month${months !== 1 ? 's' : ''} ago`;
 }
 
+// ── Open Now (checks current time against restaurant.hours) ────────────────
+
+function isOpenNow(restaurant) {
+  const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+  const hoursStr = restaurant.hours[days[new Date().getDay()]];
+  if (!hoursStr) return false;
+  const now = new Date();
+  const curMins = now.getHours() * 60 + now.getMinutes();
+  return hoursStr.split('&').some(slot => {
+    const [open, close] = slot.trim().split('–');
+    if (!open || !close) return false;
+    const toMins = s => { const [h, m] = s.trim().split(':').map(Number); return h * 60 + (m || 0); };
+    return curMins >= toMins(open) && curMins < toMins(close);
+  });
+}
+
 // ── Weighted Rating ────────────────────────────────────────────────────────
 
 function getWeightedRating(restaurantId) {
@@ -269,14 +285,14 @@ function updateNavbar() {
   if (user) {
     navLinks.innerHTML = `
       <a href="search.html">Explore</a>
-      <a href="#">Top Reviewers</a>
+      <a href="top-reviewers.html">Top Reviewers</a>
       <a href="#">Blog</a>
       <a href="profile.html" class="btn-login">${user.initials} ${user.name.split(' ')[0]}</a>
       <a href="#" class="btn-signup" onclick="Auth.logout();return false;">Log out</a>
     `;
     if (mobileMenu) mobileMenu.innerHTML = `
       <a href="search.html">Explore</a>
-      <a href="#">Top Reviewers</a>
+      <a href="top-reviewers.html">Top Reviewers</a>
       <a href="#">Blog</a>
       <a href="profile.html">My Profile</a>
       <a href="#" onclick="Auth.logout();return false;">Log out</a>
@@ -284,14 +300,14 @@ function updateNavbar() {
   } else {
     navLinks.innerHTML = `
       <a href="search.html">Explore</a>
-      <a href="#">Top Reviewers</a>
+      <a href="top-reviewers.html">Top Reviewers</a>
       <a href="#">Blog</a>
       <a href="login.html" class="btn-login">Log in</a>
       <a href="login.html" class="btn-signup">Sign up</a>
     `;
     if (mobileMenu) mobileMenu.innerHTML = `
       <a href="search.html">Explore</a>
-      <a href="#">Top Reviewers</a>
+      <a href="top-reviewers.html">Top Reviewers</a>
       <a href="#">Blog</a>
       <a href="login.html">Log in</a>
       <a href="login.html">Sign up</a>
@@ -405,7 +421,7 @@ function initSearch() {
 
     // Open now
     if (document.getElementById('opennow') && document.getElementById('opennow').checked) {
-      restaurants = restaurants.filter(r => r.openNow);
+      restaurants = restaurants.filter(r => isOpenNow(r));
     }
 
     // Accessibility
@@ -460,7 +476,7 @@ function initSearch() {
       const stars = count ? fullStarsHTML(weighted) : '☆☆☆☆☆';
       const score = count ? weighted.toFixed(1) : '–';
       const badge = r.badges[0] ? `<div class="card-badge">${r.badges[0]}</div>` : '';
-      const openBadge = r.openNow ? '<span class="mini-badge open">Open now</span>' : '<span class="mini-badge">Closed</span>';
+      const openBadge = isOpenNow(r) ? '<span class="mini-badge open">Open now</span>' : '<span class="mini-badge">Closed</span>';
       const accBadge  = r.wheelchairAccessible ? '<span class="mini-badge">♿ Accessible</span>' : '';
       const parkBadge = r.parking ? '<span class="mini-badge">🅿️ Parking</span>' : '';
 
@@ -519,7 +535,7 @@ function initRestaurant() {
     <span>•</span>
     <span>📍 ${restaurant.suburb} • ${restaurant.distance}km</span>
     <span>•</span>
-    <span style="color:${restaurant.openNow ? '#155724' : '#721c24'};">${restaurant.openNow ? '✓ Open now' : '✗ Closed'}</span>
+    <span style="color:${isOpenNow(restaurant) ? '#155724' : '#721c24'};">${isOpenNow(restaurant) ? '✓ Open now' : '✗ Closed'}</span>
   `;
 
   // Wire up "Write Review" button
@@ -645,10 +661,10 @@ function renderReviews(restaurantId) {
 
     return `<div class="review" data-review-id="${rv.id}">
       <div class="review-header">
-        <div class="review-avatar" style="background:${author.avatarGradient};">${author.initials}</div>
+        <div class="review-avatar" style="background:${author.avatarGradient};cursor:pointer;" onclick="location.href='profile.html?userId=${author.id}'">${author.initials}</div>
         <div class="review-author">
           <div class="author-name">
-            ${author.name} <span style="font-size:1rem;">${rank.emoji}</span> ${topBadge}
+            <a href="profile.html?userId=${author.id}" style="color:inherit;text-decoration:none;">${author.name}</a> <span style="font-size:1rem;">${rank.emoji}</span> ${topBadge}
           </div>
           <div class="author-rank">${rank.name} • ${author.points.toLocaleString()} pts • ${author.followers.toLocaleString()} followers</div>
           <div class="review-date">${timeAgo(rv.date)}${rv.type === 'blog' ? ' • Blog post' : ''}</div>
@@ -949,30 +965,33 @@ function renderProfileTab(tab, userId) {
 
   reviews.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  // Blog tab: single-column so posts have full reading width
+  grid.style.gridTemplateColumns = tab === 'blog' ? '1fr' : '';
+
   grid.innerHTML = reviews.map(rv => {
     const restaurant = DB.getRestaurant(rv.restaurantId);
     if (!restaurant) return '';
     const blogBlock = rv.type === 'blog' ? `
-      <div style="background:#fff8f0;padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:4px solid var(--orange);">
-        <strong style="display:block;margin-bottom:0.5rem;color:var(--orange);">${rv.blogTitle}</strong>
-        <div class="review-text" style="margin-bottom:0;">${rv.text.slice(0, 160)}...</div>
-      </div>
-      <button style="color:var(--orange);font-weight:700;background:none;border:none;cursor:pointer;font-size:0.9rem;padding:0;margin-bottom:1rem;">Read full post →</button>
+      <h3 style="font-size:1.25rem;font-weight:800;color:var(--dark);margin-bottom:1rem;line-height:1.3;">${rv.blogTitle}</h3>
+      <div class="review-text" style="line-height:1.8;">${rv.text}</div>
     ` : `<div class="review-text">${rv.text}</div>`;
 
-    return `<div class="review-card">
+    const isBlog = rv.type === 'blog';
+    return `<div class="review-card" style="${isBlog ? 'border-top:4px solid var(--orange);' : ''}">
       <div class="review-header">
         <div class="restaurant-info">
-          <div class="restaurant-icon" style="background:${restaurant.imgGradient};">${restaurant.emoji}</div>
+          <div class="restaurant-icon" style="background:${restaurant.imgGradient};cursor:pointer;" onclick="location.href='restaurant.html?id=${restaurant.id}'">${restaurant.emoji}</div>
           <div class="restaurant-details">
             <div class="restaurant-name" onclick="location.href='restaurant.html?id=${restaurant.id}'" style="cursor:pointer;">${restaurant.name}</div>
             <div class="restaurant-meta">${capitalize(restaurant.cuisine)} • ${restaurant.suburb}</div>
           </div>
         </div>
-        <div class="review-date">${timeAgo(rv.date)}</div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem;">
+          ${isBlog ? `<span style="background:var(--orange);color:white;font-size:0.7rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:12px;white-space:nowrap;">📝 Blog Post</span>` : ''}
+          <div class="review-date">${timeAgo(rv.date)}</div>
+        </div>
       </div>
       <div class="review-rating"><span class="stars">${fullStarsHTML(rv.rating)}</span></div>
-      ${rv.type === 'blog' ? `<div class="review-badges"><div class="badge badge-blog">📝 Blog Post</div>${rv.photos.length ? `<div class="badge badge-photos">📸 ${rv.photos.length} photos</div>` : ''}</div>` : ''}
       ${blogBlock}
       <div class="review-stats">
         <div class="review-stat stat-helpful"><span>👍</span><span>${rv.helpfulVotes} helpful</span></div>
@@ -981,6 +1000,52 @@ function renderProfileTab(tab, userId) {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── Page: Top Reviewers ────────────────────────────────────────────────────
+
+function initTopReviewers() {
+  const users = [...DB.get().users].sort((a, b) => b.points - a.points);
+  const medals = ['🥇', '🥈', '🥉'];
+
+  const leaderboard = document.getElementById('leaderboard');
+  if (leaderboard) {
+    leaderboard.innerHTML = users.map((user, i) => {
+      const rank = getRank(user.points);
+      const reviews = DB.getUserReviews(user.id);
+      const blogCount = reviews.filter(r => r.type === 'blog').length;
+      const totalHelpful = reviews.reduce((s, r) => s + r.helpfulVotes, 0);
+      const pos = medals[i] || `#${i + 1}`;
+      return `<div class="reviewer-card" onclick="location.href='profile.html?userId=${user.id}'" style="cursor:pointer;">
+        <div class="reviewer-pos">${pos}</div>
+        <div class="reviewer-avatar" style="background:${user.avatarGradient};">${user.initials}</div>
+        <div class="reviewer-body">
+          <div class="reviewer-name">${user.name}</div>
+          <div class="reviewer-rank">${rank.emoji} ${rank.name}</div>
+          <div class="reviewer-stats">
+            <span>⭐ ${user.points.toLocaleString()} pts</span>
+            <span>📝 ${reviews.length} review${reviews.length !== 1 ? 's' : ''}</span>
+            <span>✍️ ${blogCount} blog post${blogCount !== 1 ? 's' : ''}</span>
+            <span>👍 ${totalHelpful.toLocaleString()} helpful votes received</span>
+            <span>👥 ${user.followers.toLocaleString()} followers</span>
+          </div>
+          ${user.bio ? `<div class="reviewer-bio">${user.bio.slice(0, 120)}${user.bio.length > 120 ? '…' : ''}</div>` : ''}
+        </div>
+        <a href="profile.html?userId=${user.id}" class="btn-profile" onclick="event.stopPropagation();">View Profile →</a>
+      </div>`;
+    }).join('');
+  }
+
+  const ranksGrid = document.getElementById('ranksGrid');
+  if (ranksGrid) {
+    ranksGrid.innerHTML = RANKS.map(r => `
+      <div class="rank-card">
+        <div class="rank-emoji">${r.emoji}</div>
+        <div class="rank-name">${r.name}</div>
+        <div class="rank-pts">${r.minPts === 0 ? 'Start here' : `${r.minPts.toLocaleString()}+ pts`}</div>
+        <div class="rank-weight">Reviews count ${r.weight}×</div>
+      </div>`).join('');
+  }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1002,4 +1067,5 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (page === 'write-review') initWriteReview();
   else if (page === 'login')   initLogin();
   else if (page === 'profile') initProfile();
+  else if (page === 'top-reviewers') initTopReviewers();
 });
