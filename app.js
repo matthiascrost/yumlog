@@ -114,7 +114,21 @@ const DB = (() => {
     return !!votes[`${actorUserId}:${reviewId}:${type}`];
   }
 
-  return { init, get, save, getUser, getUserByEmail, getRestaurant, getRestaurants, getReviews, getUserReviews, addReview, updateUser, addUser, vote, hasVoted };
+  function reportReview(actorUserId, reviewId, reason) {
+    const key = 'yumlog_reports';
+    const reports = JSON.parse(localStorage.getItem(key) || '[]');
+    if (reports.some(r => r.actorUserId === actorUserId && r.reviewId === reviewId)) return 'already_reported';
+    reports.push({ actorUserId, reviewId, reason, date: new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(reports));
+    return 'reported';
+  }
+
+  function hasReported(actorUserId, reviewId) {
+    const reports = JSON.parse(localStorage.getItem('yumlog_reports') || '[]');
+    return reports.some(r => r.actorUserId === actorUserId && r.reviewId === reviewId);
+  }
+
+  return { init, get, save, getUser, getUserByEmail, getRestaurant, getRestaurants, getReviews, getUserReviews, addReview, updateUser, addUser, vote, hasVoted, reportReview, hasReported };
 })();
 
 // ── Auth Module ────────────────────────────────────────────────────────────
@@ -642,8 +656,9 @@ function renderReviews(restaurantId) {
     if (!author) return '';
     const rank = getRank(author.points);
     const isTopReviewer = author.points >= 5000;
-    const helpfulVoted = currentUser ? DB.hasVoted(currentUser.id, rv.id, 'helpful') : false;
-    const honestVoted  = currentUser ? DB.hasVoted(currentUser.id, rv.id, 'honest')  : false;
+    const helpfulVoted  = currentUser ? DB.hasVoted(currentUser.id, rv.id, 'helpful') : false;
+    const honestVoted   = currentUser ? DB.hasVoted(currentUser.id, rv.id, 'honest')  : false;
+    const alreadyReported = currentUser ? DB.hasReported(currentUser.id, rv.id) : false;
 
     const photosHTML = rv.photos && rv.photos.length
       ? `<div class="review-photos">${rv.photos.map(p => `<div class="review-photo">${p}</div>`).join('')}</div>`
@@ -682,6 +697,19 @@ function renderReviews(restaurantId) {
           🌶️ Honest ${rv.honestVotes}
         </button>
         <button class="vote-btn">💬 Reply ${rv.replies > 0 ? rv.replies : ''}</button>
+        <button class="vote-btn report-toggle-btn ${alreadyReported ? 'voted' : ''}" data-rid="${rv.id}" ${alreadyReported ? 'disabled' : ''} style="margin-left:auto;opacity:0.6;">
+          ${alreadyReported ? '⚑ Reported' : '⚑ Report'}
+        </button>
+      </div>
+      <div class="report-panel" id="report-panel-${rv.id}" style="display:none;margin-top:0.75rem;padding:0.75rem 1rem;background:#fff5f5;border-radius:8px;border:1px solid #fdd;">
+        <p style="font-size:0.85rem;font-weight:700;margin-bottom:0.5rem;color:#c0392b;">Report this review</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.5rem;">
+          <button class="report-reason-btn" data-rid="${rv.id}" data-reason="Spam or fake">Spam or fake</button>
+          <button class="report-reason-btn" data-rid="${rv.id}" data-reason="Conflict of interest">Conflict of interest</button>
+          <button class="report-reason-btn" data-rid="${rv.id}" data-reason="Inappropriate content">Inappropriate content</button>
+          <button class="report-reason-btn" data-rid="${rv.id}" data-reason="Off-topic">Off-topic</button>
+        </div>
+        <button class="report-cancel-btn" data-rid="${rv.id}" style="font-size:0.8rem;color:var(--mid);background:none;border:none;cursor:pointer;padding:0;">Cancel</button>
       </div>
     </div>`;
   }).join('') || '<p style="color:var(--mid);text-align:center;padding:2rem;">No reviews yet. Be the first!</p>';
@@ -700,6 +728,38 @@ function renderReviews(restaurantId) {
       DB.vote(user.id, reviewId, type);
       renderReviews(restaurantId);
       renderRatingBar(restaurantId);
+    });
+  });
+
+  // Wire report toggle buttons
+  container.querySelectorAll('.report-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const user = Auth.getCurrentUser();
+      if (!user) { location.href = 'login.html'; return; }
+      const panel = document.getElementById('report-panel-' + this.dataset.rid);
+      if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+  });
+
+  // Wire report reason buttons
+  container.querySelectorAll('.report-reason-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const user = Auth.getCurrentUser();
+      if (!user) { location.href = 'login.html'; return; }
+      const result = DB.reportReview(user.id, this.dataset.rid, this.dataset.reason);
+      if (result === 'reported') {
+        const panel = document.getElementById('report-panel-' + this.dataset.rid);
+        if (panel) panel.style.display = 'none';
+        renderReviews(restaurantId);
+      }
+    });
+  });
+
+  // Wire report cancel buttons
+  container.querySelectorAll('.report-cancel-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const panel = document.getElementById('report-panel-' + this.dataset.rid);
+      if (panel) panel.style.display = 'none';
     });
   });
 }
@@ -729,7 +789,8 @@ function initWriteReview() {
   window.submitQuickReview = function() {
     if (selectedRating === 0) { alert('⭐ Please select a star rating first!'); return; }
     const text = document.getElementById('reviewText').value.trim();
-    if (text.length < 20) { alert('✍️ Please write at least 20 characters.'); return; }
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    if (wordCount < MIN_WORDS.quickReview) { alert(`✍️ Please write at least ${MIN_WORDS.quickReview} words to earn points. You have ${wordCount} so far.`); return; }
 
     DB.addReview({
       id: 'rv' + Date.now(),
@@ -757,7 +818,8 @@ function initWriteReview() {
     const title = document.querySelector('.blog-form input[type="text"]').value.trim();
     const body  = document.querySelector('.blog-form textarea').value.trim();
     if (!title) { alert('Give your post a title!'); return; }
-    if (body.length < 50) { alert('Blog posts need at least 50 characters.'); return; }
+    const wordCount = body.split(/\s+/).filter(Boolean).length;
+    if (wordCount < MIN_WORDS.blogPost) { alert(`✍️ Blog posts need at least ${MIN_WORDS.blogPost} words to earn points. You have ${wordCount} so far.`); return; }
 
     DB.addReview({
       id: 'rv' + Date.now(),

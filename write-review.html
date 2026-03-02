@@ -152,7 +152,10 @@
     <div class="form-group">
       <label class="section-label">Tell us about your visit</label>
       <textarea id="reviewText" placeholder="What did you order? How was the food, service, and atmosphere? Any standout dishes or things to know?" rows="6" maxlength="500" oninput="updateCharCount()"></textarea>
-      <div class="char-count"><span id="charCount">0</span>/500 characters</div>
+      <div class="char-count" style="display:flex;justify-content:space-between;">
+        <span id="wordCount" style="font-weight:600;">0 / 30 words minimum</span>
+        <span><span id="charCount">0</span>/500 characters</span>
+      </div>
     </div>
     <div class="photo-upload">
       <label class="section-label">Add photos (optional)</label>
@@ -199,7 +202,7 @@
           <button class="format-btn">❝ Quote</button>
         </div>
         <textarea placeholder="Share the full story of your visit..." rows="15"></textarea>
-        <p style="font-size:0.85rem;color:var(--mid);margin-top:0.5rem;">💡 <strong>Pro tip:</strong> Great blog posts are 300–800 words with specific details.</p>
+        <p style="font-size:0.85rem;color:var(--mid);margin-top:0.5rem;">💡 <strong>Pro tip:</strong> Minimum 100 words required to earn points. Great posts are 300–800 words with specific details.</p>
       </div>
       <div class="button-group">
         <button class="btn-secondary" onclick="collapseBlogEditor()">← Back to Quick Review</button>
@@ -226,6 +229,11 @@
   function updateCharCount() {
     const t = document.getElementById('reviewText');
     document.getElementById('charCount').textContent = t.value.length;
+    const words = t.value.trim().split(/\s+/).filter(Boolean).length;
+    const wc = document.getElementById('wordCount');
+    const min = MIN_WORDS.quickReview;
+    wc.textContent = words >= min ? `✓ ${words} words` : `${words} / ${min} words minimum`;
+    wc.style.color = words >= min ? '#4CAF50' : (words > min * 0.6 ? 'var(--orange)' : 'var(--mid)');
   }
 
   function addPhoto() {
