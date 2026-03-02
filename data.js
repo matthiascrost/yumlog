@@ -1,13 +1,13 @@
 // data.js — Yumlog seed data & rank definitions
 
 const RANKS = [
-  { id: 'rookie',     name: 'Rookie Noodle',      emoji: '🍜', minPts: 0,    maxPts: 199,      weight: 0.5  },
-  { id: 'corporal',   name: 'Corporal Cupcake',   emoji: '🧁', minPts: 200,  maxPts: 499,      weight: 0.75 },
-  { id: 'lieutenant', name: 'Lieutenant Lasagna', emoji: '🍝', minPts: 500,  maxPts: 799,      weight: 0.9  },
-  { id: 'captain',    name: 'Captain Croissant',  emoji: '🥐', minPts: 800,  maxPts: 1199,     weight: 1.1  },
-  { id: 'major',      name: 'Major Meatball',     emoji: '🍖', minPts: 1200, maxPts: 1999,     weight: 1.2  },
-  { id: 'commander',  name: 'Commander in Beef',  emoji: '🥩', minPts: 2000, maxPts: 4999,     weight: 1.3  },
-  { id: 'fivestar',   name: 'Five-Star Foodie',   emoji: '⭐', minPts: 5000, maxPts: Infinity, weight: 1.5  },
+  { id: 'rookie',     name: 'Rookie Noodle',      emoji: '🍜', minPts: 0,    maxPts: 149,      weight: 0.5  },
+  { id: 'corporal',   name: 'Corporal Cupcake',   emoji: '🧁', minPts: 150,  maxPts: 399,      weight: 0.75 },
+  { id: 'lieutenant', name: 'Lieutenant Lasagna', emoji: '🍝', minPts: 400,  maxPts: 799,      weight: 0.9  },
+  { id: 'captain',    name: 'Captain Croissant',  emoji: '🥐', minPts: 800,  maxPts: 1499,     weight: 1.1  },
+  { id: 'major',      name: 'Major Meatball',     emoji: '🍖', minPts: 1500, maxPts: 2999,     weight: 1.2  },
+  { id: 'commander',  name: 'Commander in Beef',  emoji: '🥩', minPts: 3000, maxPts: 6999,     weight: 1.3  },
+  { id: 'fivestar',   name: 'Five-Star Foodie',   emoji: '⭐', minPts: 7000, maxPts: Infinity, weight: 1.5  },
 ];
 
 // Points awarded per action
@@ -16,6 +16,12 @@ const POINTS = {
   blogPost:     15,
   helpfulVote:  2,   // awarded to the review author
   honestVote:   2,
+};
+
+// Minimum word counts to earn points (enforced at submission)
+const MIN_WORDS = {
+  quickReview: 30,
+  blogPost:    100,
 };
 
 const SEED_USERS = [

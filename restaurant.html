@@ -98,6 +98,9 @@
     .vote-btn { display: flex; align-items: center; gap: 0.4rem; background: var(--light); border: none; border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
     .vote-btn:hover { background: #e0e0e0; }
     .vote-btn.voted { background: #ffe5e5; color: var(--orange); }
+    .vote-btn:disabled { cursor: default; }
+    .report-reason-btn { background: white; border: 1px solid #faa; border-radius: 20px; padding: 0.3rem 0.75rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #c0392b; transition: all 0.2s; }
+    .report-reason-btn:hover { background: #c0392b; color: white; border-color: #c0392b; }
     .map-widget { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
     .map-placeholder { height: 200px; background: var(--light); display: flex; align-items: center; justify-content: center; font-size: 3rem; }
     .map-details { padding: 1rem; }
